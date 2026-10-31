@@ -3,6 +3,6 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY app.js .
+COPY writer.js reader.js ./
 
-CMD ["node", "app.js"]
+CMD ["node", "reader.js"]
