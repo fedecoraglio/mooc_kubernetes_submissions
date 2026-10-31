@@ -3,26 +3,26 @@ const http = require('node:http');
 const fs = require('node:fs');
 
 const PORT = process.env.PORT || 3000;
-const FILE_PATH = '/shared/log.txt';
+const LOG_FILE = '/shared/log.txt';
+const COUNTER_FILE = '/data/counter.txt';
 
 const server = http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/') {
         try {
-            const content = fs.readFileSync(FILE_PATH, 'utf8');
+            const log = fs.readFileSync(LOG_FILE, 'utf8').trim();
+
+            const counter = fs.existsSync(COUNTER_FILE)
+                ? fs.readFileSync(COUNTER_FILE, 'utf8').trim()
+                : '0';
 
             res.writeHead(200, {
                 'Content-Type': 'text/plain; charset=utf-8'
             });
-            res.end(content);
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                res.writeHead(503);
-                res.end('Waiting for log file...');
-                return;
-            }
 
-            res.writeHead(500);
-            res.end('Unable to read log file');
+            res.end(`${log}\nPing / Pongs: ${counter}\n`);
+        } catch (error) {
+            res.writeHead(503);
+            res.end('Log output not ready');
         }
         return;
     }

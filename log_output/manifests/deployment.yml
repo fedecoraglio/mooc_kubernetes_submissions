@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,9 +13,11 @@ spec:
       labels:
         app: log-output
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: writer
-          image: log-output:1.2
+          image: log-output:1.3
           imagePullPolicy: IfNotPresent
           command: ["node", "writer.js"]
           volumeMounts:
@@ -22,7 +25,7 @@ spec:
               mountPath: /shared
 
         - name: reader
-          image: log-output:1.2
+          image: log-output:1.3
           imagePullPolicy: IfNotPresent
           command: ["node", "reader.js"]
           ports:
@@ -30,7 +33,13 @@ spec:
           volumeMounts:
             - name: shared-data
               mountPath: /shared
+            - name: persistent-data
+              mountPath: /data
+              readOnly: true
 
       volumes:
         - name: shared-data
           emptyDir: {}
+        - name: persistent-data
+          persistentVolumeClaim:
+            claimName: shared-pvc

@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,9 +13,18 @@ spec:
       labels:
         app: ping-pong
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: ping-pong
-          image: ping-pong:1.0
+          image: ping-pong:1.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+          volumeMounts:
+            - name: persistent-data
+              mountPath: /data
+      volumes:
+        - name: persistent-data
+          persistentVolumeClaim:
+            claimName: shared-pvc
