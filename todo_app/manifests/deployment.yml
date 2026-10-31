@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,7 +13,18 @@ spec:
       labels:
         app: todo-app
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: todo-app
-          image: todo-app:1.1
+          image: todo-app:1.2
           imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: image-storage
+              mountPath: /data
+      volumes:
+        - name: image-storage
+          persistentVolumeClaim:
+            claimName: todo-image-pvc
