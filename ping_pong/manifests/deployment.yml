@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ping-pong
+  namespace: exercises
 spec:
   replicas: 1
   selector:
@@ -27,4 +28,4 @@ spec:
       volumes:
         - name: persistent-data
           persistentVolumeClaim:
-            claimName: shared-pvc
+            claimName: ping-pong-pvc
