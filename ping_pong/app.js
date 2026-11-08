@@ -24,6 +24,17 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+
+    if (req.method === 'GET' && req.url === '/count') {
+        res.writeHead(200, {
+            'Content-Type': 'text/plain'
+        });
+
+        res.end(String(counter));
+        return;
+    }
+
+
     res.writeHead(404);
     res.end('Not Found');
 });
