@@ -17,8 +17,11 @@ spec:
         kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: todo-app
-          image: todo-app:1.3
+          image: todo-app:1.4
           imagePullPolicy: IfNotPresent
+          env:
+            - name: TODO_BACKEND_URL
+              value: "http://todo-backend-svc:2345"
           ports:
             - containerPort: 3000
           volumeMounts:

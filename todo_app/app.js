@@ -1,11 +1,12 @@
 
 const http = require('node:http');
 const fs = require('node:fs/promises');
-const path = require('node:path');
+
 
 const PORT = process.env.PORT || 3000;
 const IMAGE_PATH = '/data/image.jpg';
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const TODO_BACKEND_URL = process.env.TODO_BACKEND_URL || 'http://todo-backend-svc:2345';
 
 let pendingDownload = null;
 
@@ -59,6 +60,44 @@ async function downloadImage() {
 }
 
 const server = http.createServer(async (req, res) => {
+    
+    if (req.url === '/todos' &&
+        (req.method === 'GET' || req.method === 'POST')) {
+        try {
+            let body;
+
+            if (req.method === 'POST') {
+                const chunks = [];
+
+                for await (const chunk of req) {
+                    chunks.push(chunk);
+                }
+
+                body = Buffer.concat(chunks);
+            }
+
+            const response = await fetch(`${TODO_BACKEND_URL}/todos`, {
+                method: req.method,
+                headers: req.method === 'POST'
+                    ? { 'Content-Type': 'application/json' }
+                    : {},
+                body,
+                signal: AbortSignal.timeout(5000)
+            });
+
+            const result = await response.text();
+
+            res.writeHead(response.status, {
+                'Content-Type': 'application/json'
+            });
+            res.end(result);
+        } catch (error) {
+            console.error('Backend error:', error);
+            res.writeHead(502);
+            res.end('Backend unavailable');
+        }
+        return;
+    }
 
     if (req.method === 'GET' && req.url === '/') {
         res.writeHead(200, {
