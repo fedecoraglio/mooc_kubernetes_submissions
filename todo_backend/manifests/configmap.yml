@@ -7,3 +7,7 @@ data:
   PORT: "3000"
   TODO_MAX_LENGTH: "140"
   MAX_REQUEST_BYTES: "10000"
+  DB_HOST: "todo-mysql"
+  DB_PORT: "3306"
+  DB_NAME: "todo_db"
+  DB_USER: "todo_user"
