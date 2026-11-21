@@ -14,18 +14,18 @@ spec:
       labels:
         app: ping-pong
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: ping-pong
-          image: ping-pong:1.2
+          image: ping-pong:1.3
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: ping-pong-config
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ping-pong-db-secret
+                  key: POSTGRES_PASSWORD
           ports:
             - containerPort: 3000
-          volumeMounts:
-            - name: persistent-data
-              mountPath: /data
-      volumes:
-        - name: persistent-data
-          persistentVolumeClaim:
-            claimName: ping-pong-pvc
