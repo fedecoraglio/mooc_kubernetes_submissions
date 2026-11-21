@@ -2,54 +2,81 @@
 const http = require('node:http');
 const { randomUUID } = require('node:crypto');
 
-const PORT = process.env.PORT || 3000;
+function requiredNumber(name) {
+    const value = Number(process.env[name]);
 
-const todos = [
-    { id: randomUUID(), text: 'Learn Kubernetes' },
-    { id: randomUUID(), text: 'Complete the MOOC exercises' },
-    { id: randomUUID(), text: 'Deploy Todo App to Kubernetes' }
-];
+    if (!Number.isSafeInteger(value) || value <= 0) {
+        throw new Error(`Invalid or missing environment variable: ${name}`);
+    }
+
+    return value;
+}
+
+const PORT = requiredNumber('PORT');
+const TODO_MAX_LENGTH = requiredNumber('TODO_MAX_LENGTH');
+const MAX_REQUEST_BYTES = requiredNumber('MAX_REQUEST_BYTES');
+
+if (PORT > 65535) {
+    throw new Error('Invalid PORT');
+}
+
+// In-memory storage
+const todos = [];
 
 function sendJson(res, status, data) {
     res.writeHead(status, {
         'Content-Type': 'application/json; charset=utf-8'
     });
+
     res.end(JSON.stringify(data));
 }
 
 const server = http.createServer(async (req, res) => {
-    if (req.url === '/todos' && req.method === 'GET') {
+
+    // Get all todos
+    if (req.method === 'GET' && req.url === '/todos') {
         return sendJson(res, 200, todos);
     }
 
-    if (req.url === '/todos' && req.method === 'POST') {
+    // Create a todo
+    if (req.method === 'POST' && req.url === '/todos') {
         try {
-            let body = '';
+            const chunks = [];
+            let totalBytes = 0;
 
             for await (const chunk of req) {
-                body += chunk;
-                if (body.length > 10000) {
+                totalBytes += chunk.length;
+
+                if (totalBytes > MAX_REQUEST_BYTES) {
                     return sendJson(res, 413, {
                         error: 'Request too large'
                     });
                 }
+
+                chunks.push(chunk);
             }
 
-            const data = JSON.parse(body);
+            const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+
             const text = typeof data.text === 'string'
                 ? data.text.trim()
                 : '';
 
-            if (!text || text.length > 140) {
+            if (!text || text.length > TODO_MAX_LENGTH) {
                 return sendJson(res, 400, {
-                    error: 'Todo must contain 1-140 characters'
+                    error: `Todo must contain 1-${TODO_MAX_LENGTH} characters`
                 });
             }
 
-            const todo = { id: randomUUID(), text };
+            const todo = {
+                id: randomUUID(),
+                text
+            };
+
             todos.push(todo);
 
             return sendJson(res, 201, todo);
+
         } catch (error) {
             return sendJson(res, 400, {
                 error: 'Invalid request body'
@@ -57,9 +84,11 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    sendJson(res, 404, { error: 'Not found' });
+    sendJson(res, 404, {
+        error: 'Not found'
+    });
 });
 
 server.listen(PORT, () => {
-    console.log(`Todo backend listening on port ${PORT}`);
+    console.log(`Todo Backend listening on port ${PORT}`);
 });
