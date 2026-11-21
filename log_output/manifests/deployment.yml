@@ -18,23 +18,37 @@ spec:
         kubernetes.io/hostname: k3d-k3s-default-agent-0
       containers:
         - name: writer
-          image: log-output:1.4
+          image: log-output:1.5
           imagePullPolicy: IfNotPresent
           command: ["node", "writer.js"]
           volumeMounts:
             - name: shared-data
               mountPath: /shared
-
+            - name: config-data
+              mountPath: /config
+              readOnly: true
         - name: reader
-          image: log-output:1.4
+          image: log-output:1.5
           imagePullPolicy: IfNotPresent
           command: ["node", "reader.js"]
           ports:
             - containerPort: 3000
+          env:
+            - name: MESSAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: log-output-config
+                  key: MESSAGE
           volumeMounts:
             - name: shared-data
               mountPath: /shared
-
+            - name: config-data
+              mountPath: /config
+              readOnly: true
       volumes:
         - name: shared-data
           emptyDir: {}
+        - name: config-data
+          configMap:
+            name: log-output-config
+
